@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Courier CN</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td,
+        th {
+            border: 1px solid #000;
+            padding: 4px;
+        }
+
+        .header {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .right {
+            text-align: right;
+        }
+
+        .small {
+            font-size: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table>
+        <tr>
+            <td colspan="3" class="header center">Shree Maruti</td>
+            <td colspan="2">
+                Date: <%= date %><br />
+                    TAX INVOICE NO: <%= document_number %>
+            </td>
+        </tr>
+
+        <tr>
+            <td colspan="3">
+                ADDRESS: Plot No 63, Radha Vihar, Jaipur, Rajasthan - 302033
+            </td>
+            <td colspan="2" class="center">
+                <svg id="barcode"></svg><br />
+                <%= document_number %>
+            </td>
+        </tr>
+
+        <tr>
+            <td>PRODUCT</td>
+            <td>
+                <%= type %>
+            </td>
+            <td>SERVICE</td>
+            <td colspan="2">
+                <%= service %>
+            </td>
+        </tr>
+
+        <tr>
+            <td>MODE</td>
+            <td>
+                <%= travel_by %>
+            </td>
+            <td>WEIGHT</td>
+            <td colspan="2">
+                <%= weight %> g
+            </td>
+        </tr>
+    </table>
+
+    <br />
+
+    <table>
+        <tr>
+            <th>CONSIGNOR</th>
+            <th>CONSIGNEE</th>
+        </tr>
+        <tr>
+            <td>
+                <%= client %><br />
+                    <%= departmant %>
+            </td>
+            <td>
+                <%= receiver_name %><br />
+                    <%= receiver_address %><br />
+                        <%= mobile_number %>
+            </td>
+        </tr>
+    </table>
+
+    <br />
+
+    <table>
+        <tr>
+            <th colspan="4">CHARGES</th>
+        </tr>
+        <tr>
+            <td>Freight</td>
+            <td>
+                <%= price %>
+            </td>
+            <td>Package</td>
+            <td>
+                <%= package_charge %>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="3">TOTAL</td>
+            <td>
+                <%= total_amount %>
+            </td>
+        </tr>
+    </table>
+
+    <br />
+
+    <table>
+        <tr>
+            <th>TERMS & CONDITIONS</th>
+        </tr>
+        <tr>
+            <td class="small">
+                1. Company is not responsible for delay.<br />
+                2. No claim without invoice.<br />
+                3. Subject to Jaipur jurisdiction.<br />
+                4. Goods carried at owner's risk.
+            </td>
+        </tr>
+    </table>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode"></script>
+    <script>
+        JsBarcode("#barcode", "<%= document_number %>", {
+            format: "CODE128",
+            width: 2,
+            height: 40
+        });
+    </script>
+
+</body>
+
+</html>
