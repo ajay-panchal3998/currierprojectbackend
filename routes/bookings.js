@@ -4,11 +4,11 @@ const verifyToken = require('../middleware/verifyToken.js');
 const multerfunc = require('../middleware/multer.js')
 const generatePdf = require("../middleware/generateCreditBookingPdf");
 // ---------------- credit booking ----------------
-router.post("/credit_booking", verifyToken, async (req, res) => {
+router.post("/credit_booking", async (req, res) => {
     try {
-        const { userid } = req.user;
+        // const { userid } = req.user;
+        const userid = '22';
 
-        console.log(req.body);
 
         // ✅ Generate PDF
         const pdfPath = await generatePdf(req.body);
@@ -16,32 +16,32 @@ router.post("/credit_booking", verifyToken, async (req, res) => {
         const {
             client, departmant, document_number, delivery_pin_code,
             type, service, travel_by, receiver_name, receiver_address,
-            mobile_number, email, content, company_name, value, weight,
+            mobile_number, receiver_mobile_number, email, content, company_name, value, weight,
             insured, eway_bill, price, length, width, height,
             vol_weight, package_charge, total_amount
         } = req.body;
 
-        if (!client || !document_number || !receiver_name || !mobile_number) {
-            return res.status(400).json({
-                success: false,
-                message: "Required fields missing"
-            });
-        }
+        // 2. ✅ Check if Document Number already exists
+        const checkQuery = "SELECT document_number FROM creditbooking WHERE document_number = ?";
+        const [existingDoc] = await pool.query(checkQuery, [document_number]);
+
+        if (existingDoc.length > 0) return res.status(409).json({ success: false, message: `Document number ${document_number} already exists.` });
+        if (!client || !document_number || !receiver_name || !mobile_number) return res.status(400).json({ success: false, message: "Required fields missing" });
 
         const query = `
             INSERT INTO creditbooking (
               userid, client, departmant, document_number, delivery_pin_code,
               type, service, travel_by, receiver_name, receiver_address,
-              mobile_number, email, content, company_name, value, weight,
+              mobile_number,receiver_mobile_number, email, content, company_name, value, weight,
               insured, eway_bill, price, length, width, height, vol_weight,
               package_charge, total_amount, pdf
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         `;
 
         const values = [
             userid, client, departmant, document_number, delivery_pin_code,
             type, service, travel_by, receiver_name, receiver_address,
-            mobile_number, email, content, company_name, value, weight,
+            mobile_number, receiver_mobile_number, email, content, company_name, value, weight,
             insured, eway_bill, price, length, width, height, vol_weight,
             package_charge, total_amount, pdfPath
         ];

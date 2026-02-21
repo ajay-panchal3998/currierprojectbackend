@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 
 <head>
@@ -45,7 +45,7 @@
 
     <table>
         <tr>
-            <td colspan="3" class="header center">Shree Maruti</td>
+            <td colspan="3" class="header center">Anushka air currier services </td>
             <td colspan="2">
                 Date: <%= date %><br />
                     TAX INVOICE NO: <%= document_number %>
@@ -151,6 +151,325 @@
             format: "CODE128",
             width: 2,
             height: 40
+        });
+    </script>
+
+</body>
+
+</html> -->
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <style>
+        :root {
+            --brand-red: #d32f2f;
+            --brand-blue: #1a237e;
+            --border-bold: 1.5px solid #000;
+            --border-thin: 1px solid #000;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            font-size: 9.5px;
+            /* High density like the reference image */
+            color: #000;
+        }
+
+        .page-container {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            border: var(--border-bold);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+
+        td,
+        th {
+            border: var(--border-thin);
+            padding: 3px 5px;
+            vertical-align: top;
+            overflow: hidden;
+        }
+
+        /* Header Style */
+        .main-header {
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            border-bottom: var(--border-bold);
+            padding: 2px;
+        }
+
+        .logo-area {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .logo-img {
+            max-height: 50px;
+        }
+
+        .company-title {
+            color: var(--brand-red);
+            font-size: 24px;
+            font-weight: 900;
+            margin: 0;
+        }
+
+        .address-text {
+            font-size: 8px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+
+        /* Barcode Area */
+        .barcode-box {
+            text-align: center;
+        }
+
+        #barcode {
+            width: 140px;
+            height: 35px;
+        }
+
+        /* Vertical Labels */
+        .vertical-text {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            text-align: center;
+            font-weight: bold;
+            background: #e0e0e0;
+            width: 20px;
+        }
+
+        /* Bold Labels */
+        .label {
+            font-weight: bold;
+            display: block;
+            font-size: 8px;
+            text-transform: uppercase;
+            margin-bottom: 1px;
+        }
+
+        .value {
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        /* Charges Section */
+        .bg-grey {
+            background-color: #f2f2f2;
+        }
+
+        .total-row {
+            font-size: 12px;
+            font-weight: bold;
+            background: #e0e0e0;
+        }
+
+        /* Conditions Section */
+        .conditions-box {
+            font-size: 6.5px;
+            line-height: 1.1;
+            padding: 5px;
+            border-top: var(--border-bold);
+        }
+
+        .conditions-title {
+            color: var(--brand-red);
+            font-weight: bold;
+            text-align: center;
+            font-size: 9px;
+            margin-bottom: 3px;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #000;
+            margin: 2px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="page-container">
+        <div class="main-header">COURIER CONSIGNMENT NOTE ISSUED BY COMPANY</div>
+
+        <table>
+            <tr>
+                <td colspan="4" class="logo-area" style="width: 50%;">
+                    <% if(logo) { %>
+                        <img src="<%= logo %>" class="logo-img">
+                        <% } else { %>
+                            <h1 class="company-title">Anushka Air Courier</h1>
+                            <% } %>
+                                <div class="address-text">
+                                    PLOT NO 63, RADHA VIHAR, JAIPUR, RAJASTHAN - 302033
+                                </div>
+                </td>
+                <td colspan="2">
+                    <span class="label">Date:</span>
+                    <span class="value">
+                        <%= date %>
+                    </span>
+                    <hr>
+                    <span class="label">TAX INVOICE - NO:</span>
+                    <span class="value">
+                        <%= document_number %>
+                    </span>
+                </td>
+                <td colspan="2" class="barcode-box">
+                    <span class="label">C.N.No.</span>
+                    <svg id="barcode"></svg>
+                    <div class="value">
+                        <%= document_number %>
+                    </div>
+                </td>
+            </tr>
+
+            <tr>
+                <td colspan="2"><span class="label">PRODUCT:</span> <span class="value">
+                        <%= type %>
+                    </span></td>
+                <td colspan="2"><span class="label">SERVICE:</span> <span class="value">
+                        <%= service %>
+                    </span></td>
+                <td colspan="2"><span class="label">MODE:</span> <span class="value">
+                        <%= travel_by %>
+                    </span></td>
+                <td colspan="2"><span class="label">VALUE OF GOODS:</span> <span class="value">₹<%= value %></span></td>
+            </tr>
+
+            <tr>
+                <td class="vertical-text">CONSIGNOR</td>
+                <td colspan="3">
+                    <div class="value">
+                        <%= client %>
+                    </div>
+                    <div>
+                        <%= typeof departmant !=='undefined' ? departmant : '' %>
+                    </div>
+                    <div>
+                        <%= typeof email !=='undefined' ? email : '' %>
+                    </div>
+                </td>
+                <td class="vertical-text">CONSIGNEE</td>
+                <td colspan="3">
+                    <div class="value">
+                        <%= receiver_name %>
+                    </div>
+                    <div>
+                        <%= receiver_address %>
+                    </div>
+                    <span class="label" style="display:inline">Pincode:</span> <span class="value">
+                        <%= delivery_pin_code %>
+                    </span>
+                    <span class="label" style="display:inline; margin-left:10px;">Mob:</span> <span class="value">
+                        <%= mobile_number %>
+                    </span>
+                </td>
+            </tr>
+        </table>
+
+        <table>
+            <tr>
+                <td colspan="3" class="bg-grey"><span class="label">WEIGHT</span></td>
+                <td>
+                    <%= weight %>
+                        <%= type==='DOX' ? 'Gms' : 'Kg' %>
+                </td>
+                <td colspan="4" rowspan="7" style="font-size: 7.5px;">
+                    <div style="color:red; font-weight:bold; text-decoration:underline;">CONDITIONS OF CARRIAGE:</div>
+                    1. <b>Said to Contain Basis:</b> All consignments are booked on "said to contain basis". Company is
+                    not liable for description/contents.<br>
+                    2. <b>Prohibited Items:</b> Currency, jewelry, explosives, and contraband are strictly
+                    prohibited.<br>
+                    3. <b>Liability:</b> Max liability for loss/damage is limited to ₹100 for documents or 5x freight
+                    for parcels.<br>
+                    4. <b>No Service Area:</b> If booked for NSA, shipment will be returned at consignor's cost.
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3" class="bg-grey"><span class="label">VOLUMETRIC WEIGHT</span></td>
+                <td>
+                    <%= typeof vol_weight !=='undefined' ? vol_weight : '0.00' %>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3" class="bg-grey"><span class="label">FREIGHT CHARGE</span></td>
+                <td>₹<%= price %>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3" class="bg-grey"><span class="label">PACKAGE CHARGE</span></td>
+                <td>₹<%= package_charge %>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3" class="bg-grey"><span class="label">INSURANCE CHARGE</span></td>
+                <td>₹<%= typeof insurance_value !=='undefined' ? insurance_value : '0' %>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3" class="bg-grey"><span class="label">E-WAY BILL NO</span></td>
+                <td>
+                    <%= typeof eway_bill !=='undefined' ? eway_bill : 'N/A' %>
+                </td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="3">TOTAL CHARGE</td>
+                <td>₹<%= total_amount %>
+                </td>
+            </tr>
+        </table>
+
+        <table>
+            <tr style="height: 40px;">
+                <td colspan="4"><span class="label">CONSIGNOR SIGNATURE</span></td>
+                <td colspan="4"><span class="label">RECEIVED BY (Name & Stamp)</span></td>
+            </tr>
+        </table>
+
+        <div class="conditions-box">
+            <div class="conditions-title">FULL TERMS AND CONDITIONS OF CARRIAGE</div>
+            5. Applicability: The provision set out and referred to in this consignment note shall apply to
+            transportation through any mode.
+            6. Definitions: (a) SMILE - SHREE MARUTI INTEGRATED LOGISTICS LIMITED (b) Customer - means and includes
+            consignor, consignee and/or his/her authorized representatives.
+            7. Contract: The docket is a contract between the company and the customer.
+            8. Non-Negotiable: The Consignment Note is non-negotiable and the consignor acknowledges that it has been
+            prepared by the Consignor or by Company on behalf of the Consignor.
+            9. Acceptance of Terms: By giving us your shipment you accept our terms and conditions.
+            10. Insurance: SMILE does not offer any insurance cover for shipments; customer must hand over insured goods
+            for transportation under consignor insurance.
+            11. Law & Jurisdiction: This contract shall be governed by Indian Law and all disputes subject to Jaipur
+            jurisdiction.
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <script>
+        JsBarcode("#barcode", "<%= document_number %>", {
+            format: "CODE128",
+            width: 1.2,
+            height: 30,
+            displayValue: false,
+            margin: 0
         });
     </script>
 
