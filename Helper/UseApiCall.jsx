@@ -34,8 +34,6 @@ export const useApiRequests = () => {
 
     }) => {
 
-        // console.log("body",body)
-
         const isGet = method.toUpperCase() === "GET";
 
         const config = {

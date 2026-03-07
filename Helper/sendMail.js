@@ -23,7 +23,7 @@ const sendMail = async (subject, message, email) => {
             }
         });
     } catch (err) {
-        console.log(err);
+        (err);
     }
 }
 

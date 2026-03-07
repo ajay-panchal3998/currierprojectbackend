@@ -1,117 +1,181 @@
-// const puppeteer = require("puppeteer");
-// const path = require("path");
-// const fs = require("fs");
-// const ejs = require("ejs");
-
-// module.exports = async (data) => {
-//     console.log(data, '344r343')
-//     const uploadDir = path.join(__dirname, "../uploads/pdfs");
-//     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-
-//     const fileName = `credit_booking_${Date.now()}.pdf`;
-//     const filePath = `uploads/pdfs/${fileName}`;
-//     // --- LOGIC TO GET LOGO FROM ASSETS ---
-//     let logoBase64 = "";
-//     const company = (data.company_name || "").toLowerCase();
-
-//     // Determine which image to use from your assets folder
-//     let logoName = "maruti.png"; // default
-//     if (company.includes("dtdc")) logoName = "dtdc.webp";
-//     if (company.includes("pushpak")) logoName = "pushpak.png";
-
-//     try {
-//         const logoPath = path.join(__dirname, "../assests", logoName);
-//         const image = fs.readFileSync(logoPath);
-//         logoBase64 = `data:image/${path.extname(logoName).replace('.', '')};base64,${image.toString('base64')}`;
-//     } catch (err) {
-//         console.log("Logo not found, skipping image");
-//     }
-
-//     const html = await ejs.renderFile(
-//         path.join(__dirname, "../templates/creditBooking.ejs"),
-//         {
-//             ...data,
-//             logo: logoBase64, // Pass the base64 image to EJS
-//             date: new Date().toLocaleString('en-IN')
-//         }
-//     );
-
-//     const browser = await puppeteer.launch({
-//         headless: "new",
-//         args: ["--no-sandbox", "--disable-setuid-sandbox"]
-//     });
-
-//     const page = await browser.newPage();
-//     await page.setContent(html, { waitUntil: "networkidle0" });
-
-//     await page.pdf({
-//         path: filePath,
-//         format: "A4",
-//         margin: { top: "10mm", bottom: "10mm", left: "10mm", right: "10mm" },
-//         printBackground: true
-//     });
-
-//     await browser.close();
-//     return filePath;
-// };
-
-const puppeteer = require("puppeteer");
+const PDFDocument = require("pdfkit");
+const bwipjs = require("bwip-js");
 const path = require("path");
 const fs = require("fs");
-const ejs = require("ejs");
 
 module.exports = async (data) => {
-    console.log(data, '344r343')
     const uploadDir = path.join(__dirname, "../uploads/pdfs");
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
-    const fileName = `credit_booking_${Date.now()}.pdf`;
-    const filePath = `uploads/pdfs/${fileName}`;
-    let logoBase64 = "";
-    const company = (data.company_name || "").toLowerCase();
+    const fileName = `booking_${Date.now()}.pdf`;
+    const filePath = path.join(uploadDir, fileName);
 
-    // Determine which image to use based on company name
-    let logoName = "maruti.png"; // default
-    if (company.includes("dtdc")) {
-        logoName = "dtdc.webp";
-    } else if (company.includes("pushpak")) {
-        logoName = "pushpak.png";
-    } else if (company.includes("trackon")) {
-        logoName = "trackon.png";
-    }
+    const doc = new PDFDocument({ size: "A4", margin: 25 });
+    const stream = fs.createWriteStream(filePath);
+    doc.pipe(stream);
+
+    const awb = data.document_number || "000000000";
+
+    // ------------------ COMPANY LOGO ------------------
+    const company = (data.company_name || "").toLowerCase();
+    let logo = "maruti.png";
+    if (company.includes("dtdc")) logo = "dtdc.png";
+    else if (company.includes("pushpak")) logo = "pushpak.png";
+    else if (company.includes("trackon")) logo = "trackon.png";
 
     try {
-        const logoPath = path.join(__dirname, "../assests", logoName);
-        const image = fs.readFileSync(logoPath);
-        logoBase64 = `data:image/${path.extname(logoName).replace('.', '')};base64,${image.toString('base64')}`;
-    } catch (err) {
-        console.log("Logo not found, skipping image");
+        const logoPath = path.join(__dirname, "../assests", logo);
+        doc.image(logoPath, 40, 35, { width: 150 });
+    } catch {
+        doc.fontSize(18).text(data.company_name || "Courier", 40, 40);
     }
 
-    const html = await ejs.renderFile(
-        path.join(__dirname, "../templates/creditBooking.ejs"),
-        {
-            ...data,
-            logo: logoBase64, // Pass the base64 image to EJS
-            date: new Date().toLocaleString('en-IN')
-        }
+    // HEADER BOX
+    doc.rect(25, 25, 545, 95).stroke();
+
+    doc
+        .fontSize(10)
+        .text(`Date : ${new Date().toLocaleString("en-IN")}`, 400, 35);
+
+    doc
+        .fontSize(10)
+        .text(`AWB No : ${awb}`, 400, 55);
+
+    // ------------------ BARCODE ------------------
+    const barcode = await bwipjs.toBuffer({
+        bcid: "code128",
+        text: awb,
+        scale: 2,
+        height: 8,
+        includetext: true
+    });
+
+    doc.image(barcode, 380, 70, { width: 160 });
+
+    // ------------------ SENDER / RECEIVER ------------------
+
+    doc.rect(25, 130, 270, 95).stroke();
+    doc.rect(300, 130, 270, 95).stroke();
+
+    const senderName = data.client || "-";
+    const senderAddress = data.sender_address || `PIN : ${data.delivery_pin_code}`;
+
+    doc.fontSize(11).text("Sender", 35, 135);
+
+    doc
+        .fontSize(10)
+        .text(`Name : ${senderName}`, 35, 155)
+        .text(`Address : ${senderAddress}`, 35, 170)
+        .text(`Mobile : ${data.mobile_number || "-"}`, 35, 185);
+
+    doc.fontSize(11).text("Receiver", 310, 135);
+
+    doc
+        .fontSize(10)
+        .text(`Name : ${data.receiver_name || "-"}`, 310, 155)
+        .text(`Address : ${data.receiver_address || "-"}`, 310, 170)
+        .text(`Mobile : ${data.receiver_mobile_number || "-"}`, 310, 185);
+
+    // ------------------ SHIPMENT INFO ------------------
+
+    doc.rect(25, 235, 545, 60).stroke();
+
+    doc.fontSize(10)
+        .text(`Type : ${data.type}`, 40, 250)
+        .text(`Service : ${data.service}`, 200, 250)
+        .text(`Mode : ${data.travel_by}`, 380, 250)
+        .text(`Weight : ${data.weight} gm`, 40, 270)
+        .text(`Content : ${data.content}`, 200, 270);
+
+    // ------------------ PRICE CALC ------------------
+
+    const base = Number(data.price || 0);
+    const pack = Number(data.package_charge || 0);
+
+    const taxable = base + pack;
+
+    const sgst = +(taxable * 0.09).toFixed(2);
+    const cgst = +(taxable * 0.09).toFixed(2);
+
+    const total = +(taxable + sgst + cgst).toFixed(2);
+
+    const insurance = Number(data.insurance_value || 0);
+    const shipmentValue = Number(data.value || 0);
+
+    // ------------------ BOOKING SUMMARY ------------------
+
+    doc.rect(25, 310, 545, 210).stroke();
+
+    doc.fontSize(12).text("BOOKING SUMMARY", 40, 320);
+
+    let y = 350;
+
+    const drawRow = (label, value) => {
+
+        // Left label
+        doc
+            .fontSize(10)
+            .text(label, 50, y);
+
+        // Right price (shifted left + fixed width)
+        doc
+            .fontSize(10)
+            .text(` ${value}`, 430, y, {
+                width: 120,
+                align: "right"
+            });
+
+        y += 20;
+    };
+
+    drawRow("BASE RATE", base.toFixed(2));
+    drawRow("PACKAGING CHARGES", pack.toFixed(2));
+    drawRow("VALUE OF SHIPMENT", shipmentValue.toFixed(2));
+    drawRow("INSURANCE / FOV", insurance.toFixed(2));
+    drawRow("SUBTOTAL (TAXABLE)", taxable.toFixed(2));
+    drawRow("SGST @ 9%", sgst.toFixed(2));
+    drawRow("CGST @ 9%", cgst.toFixed(2));
+
+    doc.moveTo(40, y).lineTo(540, y).stroke();
+
+    y += 10;
+
+    doc.fontSize(14).text("TOTAL AMOUNT", 50, y);
+
+    doc
+        .fontSize(14)
+        .text(` ${total.toFixed(2)}`, 430, y, {
+            width: 120,
+            align: "right"
+        });
+    // ------------------ SIGNATURE ------------------
+
+    doc.rect(25, 530, 270, 55).stroke();
+    doc.rect(300, 530, 270, 55).stroke();
+
+    doc.fontSize(10).text("Consignor Signature", 95, 560);
+    doc.text("Received By", 390, 560);
+
+    // ------------------ TERMS ------------------
+
+    doc.rect(25, 595, 545, 210).stroke();
+
+    doc.fontSize(9).text("Terms & Conditions", 35, 605);
+
+    doc.fontSize(8).text(
+        `1. Shipment booked on said to contain basis.
+2. Company not responsible for prohibited items.
+3. Insurance calculated on declared shipment value.
+4. Liability limited to declared value.
+5. Claims within 7 days only.`,
+        35,
+        625,
+        { width: 520 }
     );
 
-    const browser = await puppeteer.launch({
-        headless: "new",
-        args: ["--no-sandbox", "--disable-setuid-sandbox"]
-    });
+    doc.end();
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    await new Promise(resolve => stream.on("finish", resolve));
 
-    await page.pdf({
-        path: filePath,
-        format: "A4",
-        margin: { top: "10mm", bottom: "10mm", left: "10mm", right: "10mm" },
-        printBackground: true
-    });
-
-    await browser.close();
-    return filePath;
+    return `uploads/pdfs/${fileName}`;
 };
