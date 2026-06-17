@@ -55,20 +55,20 @@ app.use((err, req, res, next) => {
 
 // CREATE SERVER
 let server;
-if (process.env.NODE_ENV === "production") {
-    const fs = require("fs");
-    // SSL certificates
-    var privateKey = fs.readFileSync('/root/apic_myreview_website/apic_myreview_website.key', 'utf-8');
-    var certificate = fs.readFileSync('/root/apic_myreview_website/apic_myreview_website.crt', 'utf-8');
-    var ca = fs.readFileSync('/root/apic_myreview_website/apic_myreview_website.ca-bundle', 'utf-8');
-    const credentials = { key: privateKey, cert: certificate, ca: ca };
+// if (process.env.NODE_ENV === "production") {
+//     const fs = require("fs");
+//     // SSL certificates
+//     var privateKey = fs.readFileSync('/root/apic_myreview_website/apic_myreview_website.key', 'utf-8');
+//     var certificate = fs.readFileSync('/root/apic_myreview_website/apic_myreview_website.crt', 'utf-8');
+//     var ca = fs.readFileSync('/root/apic_myreview_website/apic_myreview_website.ca-bundle', 'utf-8');
+//     const credentials = { key: privateKey, cert: certificate, ca: ca };
 
-    // Create HTTPS server
-    server = https.createServer(credentials, app);
-} else {
+//     // Create HTTPS server
+//     server = https.createServer(credentials, app);
+// } else {
     // Create HTTP server
     server = http.createServer(app);
-}
+// }
 
 // Start the server
 const port = process.env.NODE_ENV === "production" ? process.env.SECURE_PORT : process.env.PORT;
