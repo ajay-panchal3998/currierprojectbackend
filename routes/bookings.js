@@ -143,7 +143,6 @@ router.post('/fetch_departments', async (req, res) => {
 // ---------------- fetch departments by client ----------------
 router.post("/retail_booking", upload.single("document_image"), async (req, res) => {
     try {
-
         const data = req.body;
         const document_image = req.file ? req.file.path : null;
         const pdfPath = await generateretailPdf(req.body, document_image);

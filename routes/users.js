@@ -1,10 +1,11 @@
 const router = require("express").Router();
 const jwt = require("jsonwebtoken");
 const { pool } = require("../database/db");
-const { genUserId } = require("../Helper/generationIdfunc");
+const { genUserId, genOTP } = require("../Helper/generationIdfunc");
 const { encryptPassword, decryptPassword } = require("../helper/encriptpass");
 const verifyToken = require('../middleware/verifyToken.js');
 const genJwtToken = require("../middleware/genjwttoken.js");
+const sendMail = require("../Helper/sendMail.js");
 
 // ---------------- REGISTER ----------------
 router.post("/register", async (req, res) => {
@@ -42,24 +43,34 @@ router.post("/register", async (req, res) => {
     }
 });
 
-
-// ---------------- LOGIN ----------------
 router.post("/login", async (req, res) => {
     try {
-        const { userid, email, password } = req.body;
+        const { email, password } = req.body;
 
         if (!email || !password)
             return res.status(400).json({ message: "email & password required" });
 
-        const [rows] = await pool.query("SELECT * FROM users WHERE email=?", [email]);
+        const [rows] = await pool.query(
+            "SELECT * FROM users WHERE email=?",
+            [email]
+        );
 
-        if (rows.length === 0) return res.status(404).json({ message: "User not found" });
+        if (rows.length === 0)
+            return res.status(404).json({ message: "User not found" });
 
         const user = rows[0];
 
+        // ✅ check access
+        if (user.access !== 1)
+            return res.status(403).json({ message: "Account is disabled" });
+
         const isMatch = await decryptPassword(password, user.password);
-        if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
-        const token = genJwtToken(userid, email);
+
+        if (!isMatch)
+            return res.status(401).json({ message: "Invalid credentials" });
+
+        const token = genJwtToken(user.userid, email);
+
         return res.status(200).json({
             success: true,
             message: "Login successful",
@@ -71,48 +82,67 @@ router.post("/login", async (req, res) => {
         res.status(500).json({ message: "Server error" });
     }
 });
-
-router.post("/update-password/send-otp", verifyToken, async (req, res) => {
+router.post("/forgotpassword", async (req, res) => {
     try {
-        const { userid } = req.user;
+        const { email } = req.body;
+
         const otp = genOTP();
 
-        await pool.query("UPDATE users SET otp=?, otp_created_at=NOW() WHERE userid=?", [otp, userid]);
-        const [user] = await pool.query("SELECT email FROM users WHERE userid=?", [userid]);
-        const email = user[0].email;
+        // get user first
+        const [rows] = await pool.query(
+            "SELECT userid FROM users WHERE email=?",
+            [email]
+        );
+
+        if (rows.length === 0)
+            return res.status(404).json({ message: "User not found" });
+
+        const userid = rows[0].userid;
+
+        // update OTP
+        await pool.query(
+            "UPDATE users SET otp=?, otp_created_at=NOW() WHERE email=?",
+            [otp, email]
+        );
+
         await sendMail(
             "Update Password OTP",
-            message(otp, "", email),
+            `otp for update password is ${otp}`,
             email
         );
-        res.json({ success: true, message: "OTP sent" });
+
+        res.json({
+            success: true,
+            message: "OTP sent",
+            userid   // 👈 sending userid in response
+        });
 
     } catch (err) {
+        console.log(err);
         res.status(500).json({ message: "Server error" });
     }
 });
 
-router.put("/update-password", verifyToken, async (req, res) => {
+router.post("/update-password", async (req, res) => {
     try {
-        const { otp, newPassword } = req.body;
-        const { userid } = req.user;
+        const { otp, password, userid } = req.body;
 
-        if (!otp || !newPassword)
+
+        if (!otp || !password)
             return res.status(400).json({ message: "All fields required" });
 
         const [rows] = await pool.query(
             "SELECT otp, otp_created_at FROM users WHERE userid=?",
             [userid]
         );
-
-        if (rows[0].otp !== otp)
+        if (rows[0].otp != otp)
             return res.status(401).json({ message: "Invalid OTP" });
 
         const diff = (new Date() - new Date(rows[0].otp_created_at)) / 60000;
         if (diff > 5)
             return res.status(401).json({ message: "OTP expired" });
 
-        const hash = await encryptPassword(newPassword);
+        const hash = await encryptPassword(password);
 
         await pool.query(
             "UPDATE users SET password=?, otp=NULL WHERE userid=?",
